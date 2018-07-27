@@ -35,7 +35,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <PlatformTarget>AnyCPU</PlatformTarget>
+    <PlatformTarget>x86</PlatformTarget>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -59,6 +59,15 @@
     <Reference Include="Ext.Net.Utilities, Version=2.5.0.0, Culture=neutral, PublicKeyToken=2c34ac34702a3c23, processorArchitecture=MSIL">
       <HintPath>..\packages\Ext.NET.Utilities.2.5.0\lib\Ext.Net.Utilities.dll</HintPath>
     </Reference>
+    <Reference Include="FastReport, Version=2018.3.23.0, Culture=neutral, PublicKeyToken=db7e5ce63278458c, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\..\Windows\Microsoft.NET\assembly\GAC_MSIL\FastReport\v4.0_2018.3.23.0__db7e5ce63278458c\FastReport.dll</HintPath>
+    </Reference>
+    <Reference Include="FastReport.Web, Version=2018.3.27.0, Culture=neutral, PublicKeyToken=db7e5ce63278458c, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\..\Windows\Microsoft.NET\assembly\GAC_MSIL\FastReport.Web\v4.0_2018.3.27.0__db7e5ce63278458c\FastReport.Web.dll</HintPath>
+    </Reference>
+    <Reference Include="IBM.Data.DB2, Version=9.7.4.4, Culture=neutral, PublicKeyToken=7c307b91aa13d208, processorArchitecture=x86" />
     <Reference Include="IBM.Data.DB2.EntityFramework, Version=10.5.5.6, Culture=neutral, PublicKeyToken=7c307b91aa13d208, processorArchitecture=MSIL">
       <HintPath>..\packages\EntityFramework.IBM.DB2.6.0.7\lib\net40\IBM.Data.DB2.EntityFramework.dll</HintPath>
     </Reference>
@@ -186,12 +195,13 @@
       <DependentUpon>CitizenStore_Model.edmx</DependentUpon>
     </Compile>
     <Compile Include="Controllers\CitizensController.cs" />
+    <Compile Include="Controllers\ReportController.cs" />
+    <Compile Include="Extensions\Extensions.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
     <Compile Include="Helpers\CitizenHelper.cs" />
     <Compile Include="Models\CitizenViewModel.cs" />
-    <Compile Include="Models\ExtNetModel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -233,6 +243,20 @@
     <Content Include="CitizenStore_Model.edmx.diagram">
       <DependentUpon>CitizenStore_Model.edmx</DependentUpon>
     </Content>
+    <Content Include="App_Data\report.frx">
+      <SubType>Designer</SubType>
+    </Content>
+    <Content Include="App_Data\GridReport.frx">
+      <SubType>Designer</SubType>
+    </Content>
+    <Content Include="App_Data\GridReport2.frx">
+      <SubType>Designer</SubType>
+    </Content>
+    <Content Include="App_Data\Simple List.frx" />
+    <Content Include="App_Data\Last.frx" />
+    <Content Include="App_Data\InheritedReport.frx">
+      <SubType>Designer</SubType>
+    </Content>
     <None Include="Scripts\jquery-3.3.1.intellisense.js" />
     <Content Include="Scripts\jquery-3.3.1.js" />
     <Content Include="Scripts\jquery-3.3.1.min.js" />
@@ -244,7 +268,9 @@
     <Content Include="Scripts\jquery.validate.unobtrusive.js" />
     <Content Include="Scripts\jquery.validate.unobtrusive.min.js" />
     <Content Include="Scripts\modernizr-2.8.3.js" />
-    <Content Include="Web.config" />
+    <Content Include="Web.config">
+      <SubType>Designer</SubType>
+    </Content>
     <Content Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </Content>
@@ -256,10 +282,10 @@
     <Content Include="Views\Shared\Error.cshtml" />
     <Content Include="Views\Shared\_Layout.cshtml" />
     <Content Include="Views\Citizens\Index.cshtml" />
+    <Content Include="Views\Citizens\Report.cshtml" />
+    <Content Include="Views\Report\Index.cshtml" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="App_Data\" />
-  </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
     <Content Include="fonts\glyphicons-halflings-regular.woff2" />
     <Content Include="fonts\glyphicons-halflings-regular.woff" />

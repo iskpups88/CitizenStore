@@ -7,7 +7,7 @@
 @{
     Layout = null;
     var X = Html.X();
-    var regularExp = "/^[A-ZА-Яа-яЁёa-z.'-]+$/";
+    //var regularExp = "/^[A-ZА-Яа-яЁёa-z.'-]+$/";
 }
 
 <!DOCTYPE html>
@@ -15,7 +15,7 @@
 <html>
 <head>
     <title>Ext.NET MVC Sample</title>
-
+   
     <link type="text/css" rel="stylesheet" href="http://speed.ext.net/www/intro/css/main.css" />
 </head>
 <body>
@@ -36,6 +36,28 @@
 
             var c = b > a
             console.log(c);
+        };
+
+        var checkEmptyFields = function (form, button) {
+            var formIsValid = form.isValid();  
+            var formValues1 = form.getForm().getValues();
+            var emptyFieldsCounter = 0;
+            Object.keys(formValues1).forEach(function (key, index) {
+                if (this[key] == "")
+                    emptyFieldsCounter = emptyFieldsCounter + 1;
+            }, formValues1);
+            console.log(emptyFieldsCounter);
+            if (emptyFieldsCounter == 5 | formIsValid == false) {
+                button.setDisabled(true);
+            } else
+                button.setDisabled(false);
+
+        };
+
+        var checkFormValues = function (form, button) {
+            var formIsValid = form.isValid();           
+            console.log("Form values:", form.getForm().getValues());
+            button.setDisabled(!formIsValid);
         }
 
         //var addCitizen = function (form, grid) {
@@ -55,299 +77,334 @@
         };
 
         Ext.apply(Ext.form.VTypes, {
-            checkData: function (val, field) {
+            checkDate: function (val, field) {
                 var begin = App.BeginBirthDate.getValue();
                 var end = App.EndBirthDate.getValue();
-
-                return end > begin;
-
+                if (begin != null & end != null)
+                    return end >= begin;
+                else
+                    return true;
             },
-            checkDataText: 'Конец периода даты рождения должно быть после начала периода даты рождения!',
+            checkDateText: 'Конец периода даты рождения должно быть после начала периода даты рождения или в этот же день!',
         });
 
-        //function Test(form) {
-        //    var jsondata = form.getForm().getValues();
-        //    console.log(jsondata);
+        Ext.apply(Ext.form.VTypes, {
+            checkFieldsValues: function (val, field) {
+                var fieldRegex = /^[A-ZА-Яа-яЁёa-z.'-]+$/;
+                return fieldRegex.test(val);
+            },
+            checkFieldsValuesText: "Поле может содержать только буквы кириллицы и латинского алфавита, а так же символы - ' ",
+        });
 
-        //    var obj = new Citizen(jsondata);
-        //    console.log(obj);
 
 
-        //    return obj;
-        //}
+                    //function Test(form) {
+                    //    var jsondata = form.getForm().getValues();
+                    //    console.log(jsondata);
+
+                    //    var obj = new Citizen(jsondata);
+                    //    console.log(obj);
+
+
+                    //    return obj;
+                    //}
 
     </script>
 
 
-    @(
-            X.Window()
-            .ID("Window1")
-            .Closable(false)
-            .Resizable(false)
-            .Height(425)
-            .Icon(Icon.User)
-            .Title("Условия поиска")
-            .Draggable(true)
-            .Width(550)
-            .Modal(false)
-            .BodyPadding(5)
-            .DefaultButton("SearchButton")
-            .Layout(LayoutType.Form)
-            .Items(
-            X.FormPanel()
-                .ID("CitizenSearchForm")
-                .Width(500)
-                .DefaultAnchor("100%")
-                .DefaultButton("1")
-                .FieldDefaults(d =>
-                {
-                    d.LabelAlign = LabelAlign.Left;
-                })
-                .Items(
-                    X.FieldSet()
-                    .ColumnWidth(0.4)
-                    .Title("Поиск")
-                    .MarginSpec("0 0 0 10")
-                    .Defaults(d =>
-                    {
-                        d.Add(new Parameter("LabelWidth", "150"));
-                        d.Add(new Parameter("AllowBlank", false));
-                        d.Add(new Parameter("RegexText", "Поле может содержать только буквы кириллицы и латинского алфавита, а так же - '"));
-                    }).Items(
-
-                        X.TextField().Name("Surname").FieldLabel("Фамилия").Regex(regularExp),
-                        X.TextField().Name("Name").FieldLabel("Имя").Regex(regularExp),
-                        X.TextField().Name("Middlename").FieldLabel("Отчество").Regex(regularExp),
-                        X.DateField().Name("BeginBirthDate").ID("BeginBirthDate").FieldLabel("Начало периода даты рождения").MaxDate(DateTime.Now).Vtype("checkData"),
-                        X.DateField().Name("EndBirthDate").ID("EndBirthDate").FieldLabel("Конец периода даты рождения").MaxDate(DateTime.Now).Vtype("checkData")
-                    )
-                )
-                .Buttons(
-                    X.Button().Text("Поиск").Icon(Icon.Magnifier).ID("SearchButton").FormBind(true)
-                    .DirectEvents(de =>
-                    {
-                        de.Click.Url = Url.Action("Search");
-                        de.Click.Success = "onSuccess(App.GridPanel1, result.data); App.Window2.show();";
-                    }),
-
-                    X.Button().Text("Выход").Icon(Icon.BinClosed).Handler("App.Window1.close();")
-                )
-            )
-    )
-
 
 
 
     @(
-                             X.Window()
-                                .ID("Window2")
-                                .Closable(false)
-                                .Resizable(false)
-                                .Hidden(true)
-                                .Height(425)
-                                .Icon(Icon.Table)
-                                .Title("Список анкет")
-                                .Draggable(true)
-                                .Width(700)
-                                .Modal(true)
-                                .BodyPadding(5)
-                                .Layout(LayoutType.Form)
-                                .Items(
-                                X.GridPanel()
-                                    .ID("GridPanel1")
-                                    .PaddingSpec("10 0")
-                                    .ForceFit(true)
-                                    .Store(
-                                    X.StoreForModel()
-                                    .AutoSync(true)
-                                    .SyncUrl(Url.Action("HandleChanges"))
-                                    ).
-                                    ColumnModel(
-
-                                         X.Column().Text("Фамилия").DataIndex("surname"),
-                                         X.Column().Text("Имя").DataIndex("citizenname"),
-                                         X.Column().Text("Отчество").DataIndex("middlename"),
-                                         X.DateColumn().Text("Дата рождения").DataIndex("birthdate").Format("dd.MM.yyyy")
-                                    )
-                                     .TopBar(
-                                        X.Toolbar()
-                                        .Items(
-                                            X.Button().Text("Добавить").Icon(Icon.Add).Handler("App.AddCitizenWindow.show();"),
-                                            X.Button().Text("Изменить").Icon(Icon.BulletEdit).ID("EditButton").Handler("App.UpdateCitizenWindow.show();").Disabled(true),
-                                            X.Button().Text("Удалить").Icon(Icon.Delete).Handler("App.DeleteQuestionWindow.show();"),
-                                            //Handler(Handler("this.up('grid').deleteSelected();")),
-                                            X.ToolbarSeparator(),
-                                            X.Button().Text("Печать").Icon(Icon.Printer).Handler("console.log(App.GridPanel1.getRowsValues()); App.GridPanel1.print()").DirectEvents(de =>
-                                            {
-                                                de.Click.Action = "PrintData";
-                                    //de.Click.Method = HttpMethod.POST;
-                                    de.Click.Json = true;
-                                                de.Click.ExtraParams.Add(new Parameter("grindData", "App.GridPanel1.getRowsValues()", ParameterMode.Raw));
-                                            })
-
-                                        )
-                                    ).SelectionModel(X.RowSelectionModel().Mode(SelectionMode.Single)
-                                        .Listeners(l =>
-                                        {
-                                            l.Select.Handler = "App.UpdateCitizenForm.getForm().loadRecord(record); App.EditButton.setDisabled(false)";
-                                        })
-                                    )
-                                    ).Buttons(X.Button().Text("Выход").Icon(Icon.BinClosed).Handler("App.Window2.close();"))
-
-    )
-
-
-
-    @(
-                                    X.Window()
-                                       .ID("UpdateCitizenWindow")
-                                       .Closable(false)
-                                       .Resizable(false)
-                                       .Hidden(true)
-                                       .Height(390)
-                                       .Width(500)
-                                       .Icon(Icon.UserEdit)
-                                       .Title("Анкета гражданина")
-                                       .Draggable(true)
-                                       .Modal(true)
-                                       .BodyPadding(5)
-                                       .DefaultButton("SaveButton")
-                                       .Layout(LayoutType.Form)
-                                       .Items(
-                                         X.FormPanel()
-                                            .ID("UpdateCitizenForm")
-                                            .Width(400)
-                                            .DefaultAnchor("100%")
-                                            .DefaultButton("1")
-                                            .FieldDefaults(d =>
-                                            {
-                                                d.LabelAlign = LabelAlign.Left;
-                                                d.InputWidth = 100;
-                                            })
-                                .Items(
-                                    X.FieldSet()
-                                    .ColumnWidth(0.4)
-                                    .Title("Анкета")
-                                    .MarginSpec("0 0 0 10")
-                                    .Defaults(d =>
-                                    {
-                                        d.Add(new Parameter("LabelWidth", "150"));
-                                        d.Add(new Parameter("AllowBlank", false));
-                                        d.Add(new Parameter("RegexText", "Поле может содержать только буквы кириллицы и латинского алфавита, а так же - '"));
-                                    })
-
-                                .Items(
-
-                                    X.TextField().Name("surname").FieldLabel("Фамилия").Regex(regularExp),
-                                    X.TextField().Name("citizenname").FieldLabel("Имя").Regex(regularExp),
-                                    X.TextField().Name("middlename").FieldLabel("Отчество").Regex(regularExp),
-                                    X.DateField().Name("birthdate").FieldLabel("Дата рождения").Format("dd.MM.yyyy").MaxDate(DateTime.Now)
-                                )
-                                )
-                                .Buttons(
-                                     X.Button().Text("Сохранить").ID("SaveButton").Icon(Icon.Add).FormBind(true)
-                                     .Handler("updateCitizen(App.UpdateCitizenForm); App.UpdateCitizenWindow.close(); /*App.UpdateCitizenForm.getForm().reset();*/"),
-                                     X.Button().Text("Выход").Icon(Icon.BinClosed).Handler("App.UpdateCitizenWindow.close();"))
-            )
-    )
-
-
-
-    @(
-                            X.Window()
-                               .ID("AddCitizenWindow")
-                               .Closable(false)
-                               .Resizable(false)
-                               .Hidden(true)
-                               .Height(390)
-                               .Icon(Icon.UserAdd)
-                               .Title("Анкета гражданина")
-                               .Draggable(true)
-                               .Width(500)
-                               .Modal(true)
-                               .BodyPadding(5)
-                               .Layout(LayoutType.Form)
-                               .DefaultButton("AddUserButton")
-                               .Items(
-                                   X.FormPanel()
-                                      .ID("AddCitizenForm")
-                                      .Width(400)
+                                  X.Window()
+                                  .ID("Window1")
+                                  .Closable(false)
+                                  .Resizable(false)
+                                  .Height(425)
+                                  .Icon(Icon.User)
+                                  .Title("Условия поиска")
+                                  .Draggable(true)
+                                  .Width(550)
+                                  .Modal(false)
+                                  .BodyPadding(5)
+                                  .DefaultButton("SearchButton")
+                                  .Layout(LayoutType.Form)
+                                  .Items(
+                                  X.FormPanel()
+                                      .ID("CitizenSearchForm")
+                                      .Width(500)
                                       .DefaultAnchor("100%")
-                                      .DefaultButton("1")
+                                      .DefaultButton("SearchButton")
                                       .FieldDefaults(d =>
                                       {
                                           d.LabelAlign = LabelAlign.Left;
-                                      })
+                                      }
+                                      )
+                                         .Listeners(l =>
+                                         {
+
+                                             l.FieldChange.Handler = "checkEmptyFields(App.CitizenSearchForm, App.SearchButton)";
+                                         })
+
                                       .Items(
                                           X.FieldSet()
                                           .ColumnWidth(0.4)
-                                          .Title("Анкета")
+                                          .Title("Поиск")
                                           .MarginSpec("0 0 0 10")
+
                                           .Defaults(d =>
                                           {
                                               d.Add(new Parameter("LabelWidth", "150"));
-                                              d.Add(new Parameter("AllowBlank", false));
-                                              d.Add(new Parameter("RegexText", "Поле может содержать только буквы кириллицы и латинского алфавита, а так же - '"));
-                                          })
+                                          }).Items(
 
-                                            .Items(
-                                                X.TextField().Name("surname").FieldLabel("Фамилия").Regex(regularExp),
-                                                X.TextField().Name("citizenname").FieldLabel("Имя").Regex(regularExp),
-                                                X.TextField().Name("middlename").FieldLabel("Отчество").Regex(regularExp),
-                                                X.DateField().Name("birthdate").FieldLabel("Дата рождения").Format("dd.MM.yyyy").MaxDate(DateTime.Now)
+                                              X.TextField().Name("Surname").FieldLabel("Фамилия").Vtype("checkFieldsValues"),
+                                              X.TextField().Name("Name").FieldLabel("Имя").Vtype("checkFieldsValues"),
+                                              X.TextField().Name("Middlename").FieldLabel("Отчество").Vtype("checkFieldsValues"),
+                                              X.DateField().Name("BeginBirthDate").ID("BeginBirthDate").FieldLabel("Начало периода даты рождения").MaxDate(DateTime.Now).Vtype("checkDate"),
+                                              X.DateField().Name("EndBirthDate").ID("EndBirthDate").FieldLabel("Конец периода даты рождения").MaxDate(DateTime.Now).Vtype("checkDate")
+                                          )
 
-                                            )
-                                    )
+                                      )
+                                      )
+                                      .Buttons(
+                                          X.Button().Text("Поиск").Icon(Icon.Magnifier).ID("SearchButton")
+                                          .Disabled(true)
+                                          //.FormBind(true)
+                                          .DirectEvents(de =>
+                                          {
+                                              de.Click.Url = Url.Action("Search");
+                                              de.Click.Json = true;
+                                              de.Click.ExtraParams.Add(new Parameter("model", "App.CitizenSearchForm.getForm().getValues()", ParameterMode.Raw));
+                                              de.Click.Success = "onSuccess(App.GridPanel1, result.data); App.Window2.show();";
+                                          }),
 
-                                .Buttons(
-                                     X.Button().Text("Добавить").Icon(Icon.Add).ID("AddUserButton").FormBind(true)
-                                     //.Handler("App.AddCitizenWindow.close(); App.SearchButton.click()").DirectClickAction("Add"),
-                                     .DirectEvents(de =>
-                                     {
-                                         de.Click.Url = Url.Action("Add");
-
-                                         de.Click.Method = HttpMethod.POST;
-
-                                        //de.Click.ExtraParams.Add(new Parameter("model", "Test(App.CitizenSearchForm)", ParameterMode.Raw));
-
-                                        de.Click.Success = "App.AddCitizenWindow.close(); App.SearchButton.click(); onSuccess(App.GridPanel1, result.data);";
-                                     }),
-                                     X.Button().Text("Выход").Icon(Icon.BinClosed).Handler("App.AddCitizenWindow.close();"))
-            )
+                                          X.Button().Text("Выход").Icon(Icon.Cross).Handler("App.Window1.close();")
+                                  )
     )
 
     @(
-                X.Window()
-                   .ID("DeleteQuestionWindow")
-                   .Closable(false)
-                   .Resizable(false)
-                   .Hidden(true)
-                   .Height(185)
-                   .Width(350)
-                   .Icon(Icon.UserDelete)
-                   .Title("Список анкет")
-                   .Draggable(true)
-                   .Modal(true)
-                   .BodyPadding(5)
-                   .Layout(LayoutType.Form)
-                   .Items(
-                    X.Panel()
-                        .Items(
-                            X.Label().Text("Вы уверены что хотите удалить пользователя?")
-                        )
-                    )
-                   .Buttons(
-                        X.Button().Text("Да").Icon(Icon.Accept).Handler("App.GridPanel1.deleteSelected(); App.DeleteQuestionWindow.close();"),
-                        X.Button().Text("Нет").Icon(Icon.None).Handler("App.DeleteQuestionWindow.close();"))
+                           X.Window()
+                              .ID("Window2")
+                              .Closable(false)
+                              .Resizable(false)
+                              .Hidden(true)
+                              .Height(500)
+                              .Icon(Icon.Table)
+                              .Title("Список анкет")
+                              .Draggable(true)
+                              .Width(700)
+                              .Modal(true)
+                              .BodyPadding(5)
+                              .Layout(LayoutType.Form)
+                              .Items(
+                              X.GridPanel()
+                                  .ID("GridPanel1")
+                                  .PaddingSpec("10 0")
+                                  .ForceFit(true)
+                                  .Store(
+                                  X.StoreForModel()
+                                  .AutoSync(true)
+                                  .SyncUrl(Url.Action("HandleChanges"))
+                                  )
+                                  .Height(400)
+                                  .ColumnModel(
+                                       X.Column().Text("Фамилия").DataIndex("surname"),
+                                       X.Column().Text("Имя").DataIndex("citizenname"),
+                                       X.Column().Text("Отчество").DataIndex("middlename"),
+                                       X.DateColumn().Text("Дата рождения").DataIndex("birthdate").Format("dd.MM.yyyy")
+                                  )
+
+                                   .TopBar(
+                                      X.Toolbar()
+                                      .Items(
+                                          X.Button().Text("Добавить").Icon(Icon.Add).Handler("App.AddCitizenWindow.show();"),
+                                          X.Button().Text("Изменить").Icon(Icon.BulletEdit).ID("EditButton").Handler("App.UpdateCitizenWindow.show();").Disabled(true),
+                                          X.Button().Text("Удалить").Icon(Icon.Delete).Handler("App.DeleteQuestionWindow.show();"),
+                                          //Handler(Handler("this.up('grid').deleteSelected();")),
+                                          X.ToolbarSeparator(),
+                                          X.Button().Text("Печать").Icon(Icon.Printer).HrefTarget("blank").Handler("console.log(App.GridPanel1.getRowsValues()); /*App.GridPanel1.print();*/ ").DirectEvents(de =>
+                                          {
+                                              //de.Click.Timeout = 60000;
+                                             
+                                              de.Click.Action = "PrintData";
+                                              //de.Click.Method = HttpMethod.POST;
+                                              de.Click.Json = true;
+                                              de.Click.ExtraParams.Add(new Parameter("citizens", "App.GridPanel1.getRowsValues()", ParameterMode.Raw));
+                                              de.Click.Success = "window.open('Citizens/Report', 'myNewWindow')";
+                                              //de.Click.IsUpload = true;
+                                          })
+
+                                  )
+                                  )
+                                  .SelectionModel(X.RowSelectionModel().Mode(SelectionMode.Single)
+                                      .Listeners(l =>
+                                      {
+                                          l.Select.Handler = "App.UpdateCitizenForm.getForm().loadRecord(record); App.EditButton.setDisabled(false)";
+                                      })
+                                  )
+                                  )
+                                  .Buttons(X.Button().Text("Выход").Icon(Icon.Cross).Handler("App.Window2.close();"))
+
+
+    )
+    @*@ViewBag.WebReport.GetHtml()*@
+
+
+
+
+    @(
+                                                            X.Window()
+                                                               .ID("UpdateCitizenWindow")
+                                                               .Closable(false)
+                                                               .Resizable(false)
+                                                               .Hidden(true)
+                                                               .Height(390)
+                                                               .Width(450)
+                                                               .Icon(Icon.UserEdit)
+                                                               .Title("Анкета гражданина")
+                                                               .Draggable(true)
+                                                               .Modal(true)
+                                                               .BodyPadding(5)
+                                                               .DefaultButton("SaveButton")
+                                                               .Layout(LayoutType.Form)
+                                                               .Items(
+                                                                 X.FormPanel()
+                                                                    .ID("UpdateCitizenForm")
+                                                                    .Width(400)
+                                                                    .DefaultAnchor("100%")
+                                                                    .DefaultButton("SaveButton")
+                                                                    .FieldDefaults(d =>
+                                                                    {
+                                                                        d.LabelAlign = LabelAlign.Left;
+                                                            //d.InputWidth = 100;
+                                                        })
+                                                                   .Listeners(l =>
+                                                                   {
+                                                                       l.FieldValidityChange.Handler = "checkFormValues(App.UpdateCitizenForm, App.SaveButton)";
+                                                                   })
+                                                        .Items(
+                                                            X.FieldSet()
+                                                            .ColumnWidth(0.4)
+                                                            .Title("Анкета")
+                                                            .MarginSpec("0 0 0 10")
+                                                            .Defaults(d =>
+                                                            {
+                                                                d.Add(new Parameter("LabelWidth", "150"));
+                                                                d.Add(new Parameter("AllowBlank", false));
+                                                            })
+
+                                                        .Items(
+
+                                                            X.TextField().Name("surname").FieldLabel("Фамилия").Vtype("checkFieldsValues"),
+                                                            X.TextField().Name("citizenname").FieldLabel("Имя").Vtype("checkFieldsValues"),
+                                                            X.TextField().Name("middlename").FieldLabel("Отчество").Vtype("checkFieldsValues"),
+                                                            X.DateField().Name("birthdate").FieldLabel("Дата рождения").Format("dd.MM.yyyy").MaxDate(DateTime.Now)
+                                                        )
+                                                        )
+                                                        )
+                                                        .Buttons(
+                                                             X.Button().Text("Сохранить").ID("SaveButton").Icon(Icon.Add).Disabled(true)
+                                                             //.FormBind(true)
+                                                             .Handler("updateCitizen(App.UpdateCitizenForm); App.UpdateCitizenWindow.close();"),
+                                                             X.Button().Text("Выход").Icon(Icon.Cross).Handler("App.UpdateCitizenWindow.close();")
+                                    )
     )
 
 
 
+    @(
+                 X.Window()
+                    .ID("AddCitizenWindow")
+                    .Closable(false)
+                    .Resizable(false)
+                    .Hidden(true)
+                    .Height(390)
+                    .Icon(Icon.UserAdd)
+                    .Title("Анкета гражданина")
+                    .Draggable(true)
+                    .Width(500)
+                    .Modal(true)
+                    .BodyPadding(5)
+                    .Layout(LayoutType.Form)
+                    .DefaultButton("AddUserButton")
+                    .Items(
+                        X.FormPanel()
+                           .ID("AddCitizenForm")
+                           .Width(400)
+                           .DefaultAnchor("100%")
+                           .DefaultButton("AddUserButton")
+                           .FieldDefaults(d =>
+                           {
+                               d.LabelAlign = LabelAlign.Left;
+                           })
+                           .Listeners(l =>
+                           {
+                               l.FieldValidityChange.Handler = "checkFormValues(App.AddCitizenForm, App.AddUserButton)";
+                           })
+                           .Items(
+                               X.FieldSet()
+                               .ColumnWidth(0.4)
+                               .Title("Анкета")
+                               .MarginSpec("0 0 0 10")
+                               .Defaults(d =>
+                               {
+                                   d.Add(new Parameter("LabelWidth", "150"));
+                                   d.Add(new Parameter("AllowBlank", false));
+                               })
+
+                                 .Items(
+                                     X.TextField().Name("surname").FieldLabel("Фамилия").Vtype("checkFieldsValues"),
+                                     X.TextField().Name("citizenname").FieldLabel("Имя").Vtype("checkFieldsValues"),
+                                     X.TextField().Name("middlename").FieldLabel("Отчество").Vtype("checkFieldsValues"),
+                                     X.DateField().Name("birthdate").FieldLabel("Дата рождения").Format("dd.MM.yyyy").MaxDate(DateTime.Now)
+
+                                 )
+                         )
+                         )
+                     .Buttons(
+                          X.Button().Text("Добавить").Icon(Icon.Add).ID("AddUserButton").Disabled(true)
+                          .DirectEvents(de =>
+                          {
+                              de.Click.Url = Url.Action("Add");
+
+                              de.Click.Method = HttpMethod.POST;
 
 
+                              de.Click.Json = true;
 
+                              de.Click.ExtraParams.Add(new Parameter("model", "App.AddCitizenForm.getForm().getValues()", ParameterMode.Raw));
 
+                              de.Click.Success = "App.AddCitizenWindow.close(); App.SearchButton.click(); /*onSuccess(App.GridPanel1, result.data);*/";
 
+                          }),
+                          X.Button().Text("Выход").Icon(Icon.Cross).Handler("App.AddCitizenWindow.close();")
 
+                    )
+    )
+
+    @(
+                                        X.Window()
+                                           .ID("DeleteQuestionWindow")
+                                           .Closable(false)
+                                           .Resizable(false)
+                                           .Hidden(true)
+                                           .Height(185)
+                                           .Width(350)
+                                           .Icon(Icon.UserDelete)
+                                           .Title("Список анкет")
+                                           .Draggable(true)
+                                           .Modal(true)
+                                           .BodyPadding(5)
+                                           .Layout(LayoutType.Form)
+                                           .Items(
+                                            X.Panel()
+                                                .Items(
+                                                    X.Label().Text("Вы уверены что хотите удалить пользователя?")
+                                                )
+                                            )
+                                           .Buttons(
+                                                X.Button().Text("Да").Icon(Icon.Accept).Handler("App.GridPanel1.deleteSelected(); App.DeleteQuestionWindow.close();"),
+                                                X.Button().Text("Нет").Icon(Icon.None).Handler("App.DeleteQuestionWindow.close();"))
+    )
 </body>
 </html>
