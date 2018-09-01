@@ -1,21 +1,19 @@
 ﻿using System.Collections.Generic;
-using System.Data.Entity;
-using System.Threading.Tasks;
 using System.Web.Mvc;
 using Ext.Net.MVC;
 using CitizenStore.Models;
 using Ext.Net;
-using CitizenStore.Utils;
 using FastReport.Web;
-using FastReport.Data;
 using CitizenStore.Extensions;
+using CitizenStore.Repositories;
+using System;
 
 namespace CitizenStore.Controllers
 {
     public class CitizensController : Controller
     {
         private WebReport webReport = new WebReport();
-        private CitizenruDbEntities db = new CitizenruDbEntities();
+        private ICitizenRepository repo = new CitizenRepository();
 
         public ActionResult Index()
         {
@@ -26,105 +24,94 @@ namespace CitizenStore.Controllers
         [HttpPost]
         public ActionResult Search(CitizenViewModel model)
         {
-            List<citizen> data = new List<citizen>();
-            if (ModelState.IsValid)
-            {
-                //data = await db.citizens.Where(c => c.citizenname.ToUpper() == model.Name.ToUpper()
-                //                                    && c.surname.ToUpper() == model.Surname.ToUpper()
-                //                                    && c.middlename.ToUpper() == model.Middlename.ToUpper()
-                //                                    && ((model.BeginBirthDate <= c.birthdate) && (c.birthdate <= model.EndBirthDate))
-                //                                     ).ToListAsync();
-
-                data = CitizenHelper.CitizenQueryBuilder(model);
-                return this.Store(data);
-            }
-            //else
-            //{
-            //    List<string> errorList = new List<string>();
-            //    List<ModelErrorCollection> errors = ModelState.Select(x => x.Value.Errors)
-            //               .Where(y => y.Count > 0)
-            //               .ToList();
-            //    foreach (var error in errors)
-            //    {
-            //        errorList.Add(error[0].ErrorMessage);
-            //    }
-            //    CitizenHelper.CitizenQuery(model);
-            //    //ViewBag.ErrorMessage = $"{errorsMessage}";
-
-            //}
-            return View("Index");
-
+            List<Citizen>  data = repo.GetCitizenList(model);
+            return this.Store(data);
         }
 
 
-        public async Task<ActionResult> Add(citizen model)
+        public ActionResult Add(Citizen model)
         {
             if (ModelState.IsValid)
             {
-                db.citizens.Add(model);
-                await db.SaveChangesAsync();
+                repo.Create(model);
                 return this.Store(model);
             }
             else
                 return (ActionResult)this.Content("");
         }
 
-        public async Task<ActionResult> HandleChanges(StoreDataHandler handler)
+        public ActionResult HandleChanges(StoreDataHandler handler)
         {
-            List<citizen> citizens = handler.ObjectData<citizen>();
-            //string errorMessage = null;
-            if (handler.Action == StoreAction.Destroy)
+            List<Citizen> citizens = handler.ObjectData<Citizen>();
+            string errorMessage = null;
+
+            if (handler.Action == StoreAction.Create)
             {
-                foreach (citizen deleted in citizens)
+                try
                 {
-                    citizen citizen = await db.citizens.FirstOrDefaultAsync(c => c.id == deleted.id);
-                    db.citizens.Remove(citizen);
-                    await db.SaveChangesAsync();
+                    foreach (Citizen created in citizens)
+                    {
+                        repo.Create(created);
+                    }
+                }catch(Exception e)
+                {
+                    errorMessage = e.Message;
+                }
+            }
+            else if (handler.Action == StoreAction.Destroy)
+            {
+                foreach (Citizen deleted in citizens)
+                {
+                    repo.Delete(deleted.Id);
+                    //citizen citizen = await db.citizens.FirstOrDefaultAsync(c => c.id == deleted.id);
+                    //db.citizens.Remove(citizen);
+                    //await db.SaveChangesAsync();
                 }
             }
             else if (handler.Action == StoreAction.Update)
             {
-                foreach (citizen updated in citizens)
+                foreach (Citizen updated in citizens)
                 {
-                    citizen citizen = await db.citizens.FirstOrDefaultAsync(c => c.id == updated.id);
-                    CitizenHelper.CitizenUpdate(citizen, updated);
-                    await db.SaveChangesAsync();
+                    try
+                    {
+                        repo.Update(updated);
+                    }
+                    catch (Exception e)
+                    {
+                        errorMessage = e.Message;
+                    }
+                    //citizen citizen = await db.citizens.FirstOrDefaultAsync(c => c.id == updated.id);
+                    //CitizenHelper.CitizenUpdate(citizen, updated);
+                    //await db.SaveChangesAsync();
                 }
             }
 
-            //if (errorMessage != null)
-            //{
-            //    return this.Store(errorMessage);
-            //}
+            if (errorMessage != null)
+            {
+                return this.Store(errorMessage);
+            }
 
             return handler.Action != StoreAction.Destroy ? (ActionResult)this.Store(citizens) : (ActionResult)this.Content("");
         }
 
-  
-        public void PrintData(List<citizen> citizens)
+
+        public void PrintData(List<Citizen> citizens)
         {
-            TempData["list"] = citizens;
-            //return RedirectToAction("Report");
+            TempData["citizens"] = citizens;
         }
 
         public ActionResult Report()
         {
             WebReport webReport = new WebReport
             {
-                Width = 780,// Unit.Percentage(100);
-                Height = 800 // Unit.Percentage(100); 
+                Width = 780,
+                Height = 800 
             };
-            var citizens = TempData["list"] as List<citizen>;
-            //List<citizen> citizens = db.citizens.Where(c => c.surname == "a").ToList();
-            //webReport.Report.RegisterData(citizens, "AppData");
-
-            //webReport.Report.SetParameterValue("Surname", "a");
-            //webReport.ReportFile = this.Server.MapPath("~/App_Data/InheritedReport.frx");
-            string report_path = GetReportPath();
+            var citizens = TempData["citizens"] as List<Citizen>;
+            string report_path = GetReportPath();            ;
             System.Data.DataSet CitizenDataSet = citizens.ToDataSet();
             webReport.Report.RegisterData(CitizenDataSet, "CitizenDataSet");
             webReport.Report.Load(report_path + "InheritedReport.frx");
-
             ViewBag.WebReport = webReport;
             return View();
         }
@@ -135,14 +122,5 @@ namespace CitizenStore.Controllers
             return this.Server.MapPath("~/App_Data/");
         }
 
-
-        protected override void Dispose(bool disposing)
-        {
-            if (disposing)
-            {
-                db.Dispose();
-            }
-            base.Dispose(disposing);
-        }
     }
 }
